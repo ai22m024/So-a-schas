@@ -2,16 +2,29 @@ from summarizer import Summarizer
 import numpy as np
 from textblob_de import TextBlobDE as Blob 
 from germansentiment import SentimentModel
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
 import random
 import pandas as pd
 from langdetect import  DetectorFactory
 import langdetect
 from difflib import SequenceMatcher
+from enum import Enum
+
+from src.experiment.review_logger import ReviewLogger
 
 DetectorFactory.seed = 0
 import os 
+
+class SummarizerType(Enum):
+    EXTRACTIVE = 0,
+    ABSTRACTIVE = 1,
+    BOTH = 2
+
 class NegativeSummarizer:
-    def __init__(self, location):
+    def __init__(self, location, sum_type = SummarizerType.EXTRACTIVE):
+        self.sum_type = sum_type
+        
         # the query location
         self.location = location
 
@@ -22,11 +35,18 @@ class NegativeSummarizer:
         self.review_list = self.__prepare_data__(self.csv_filepath)
 
         # setup summarzier model (pip: bert-extractive-summarizer)
-        self.summarizer_model = Summarizer(reduce_option="max")
+        if sum_type == SummarizerType.EXTRACTIVE or sum_type == SummarizerType.BOTH:
+            self.summarizer_model_ext = Summarizer(reduce_option="max")
+
+            self.review_logger = ReviewLogger("Extractive", self.location)
+        if sum_type == SummarizerType.ABSTRACTIVE or sum_type == SummarizerType.BOTH:
+            self.tokenizer = AutoTokenizer.from_pretrained("Einmalumdiewelt/T5-Base_GNAD")
+            self.summarizer_model_abst = AutoModelForSeq2SeqLM.from_pretrained("Einmalumdiewelt/T5-Base_GNAD")
+
+            self.review_logger= ReviewLogger("Abstractive", self.location)
+
         # setup sentiment model (pip: germansentiment)
         self.sentiment_model = SentimentModel()
-
-        
 
     def __lookup_location_csv__(self, location):
         similarities = []
@@ -62,10 +82,42 @@ class NegativeSummarizer:
 
         return review_list
     
+    def sample_summary_data(self, summary_count):
+
+        sentences = []
+        # define how much many summaries should be generated (1-10 summaries available)
+        self.summary_count = np.clip(summary_count, 1, 50)
+        
+        self.summaries = []
+        # repeate as long, till we reach the summary count
+        while len(self.summaries) < self.summary_count:
+            # find a random review that fits our language
+            review = self.find_random_review("de")
+
+            negative_sentences = ""
+            # create a textblob so we can iterate over the individual sentences
+            review_blob = Blob(review)
+
+            # predict the sentiment for every sentence in of the chosen review
+            sentiments = self.sentiment_model.predict_sentiment(review_blob.raw_sentences)
+
+            for i, noun in enumerate(review_blob.raw_sentences):
+                # for each sentences, check the textblob sentiment and the germansentiment.
+                # by using two sentiment analyzers we have a higher chance of finding negative sentences
+                if sentiments[i] == "negative" or sentiments[i] == "neutral"  or review_blob.sentences[i].sentiment.polarity <= 0:
+                    # append the negative sentences
+                    if random.random() > 0.5:
+                        negative_sentences = negative_sentences + noun
+                    else:
+                        negative_sentences = noun + negative_sentences
+            
+            sentences.append(negative_sentences)
+
+        return sentences
+    
     def summarize(self, summary_count):
         # define how much many summaries should be generated (1-10 summaries available)
         self.summary_count = np.clip(summary_count, 1, 10)
-        
         
         self.summaries = []
         # repeate as long, till we reach the summary count
@@ -85,22 +137,35 @@ class NegativeSummarizer:
             for i, noun in enumerate(review_blob.raw_sentences):
                 # for each sentences, check the textblob sentiment and the germansentiment.
                 # by using two sentiment analyzers we have a higher chance of finding negative sentences
-                if sentiments[i] == "negative"  or review_blob.sentences[i].sentiment.polarity < 0 or (sentiments[i]=="neutral" and random.random() > 0.8):
+                if sentiments[i] == "negative" or sentiments[i] == "neutral"  or review_blob.sentences[i].sentiment.polarity <= 0:
                     # append the negative sentences
                     if random.random() > 0.5:
                         negative_sentences = negative_sentences + noun
                     else:
                         negative_sentences = noun + negative_sentences
 
-                  
-            # summarize the sentences, we create a sentence between 30 and 100 characters
-            summary = self.summarizer_model.run(negative_sentences, ratio=0.5, min_length=30, max_length=100, use_first=False)
+            if self.sum_type == SummarizerType.EXTRACTIVE:
+                # summarize the sentences, we create a sentence between 30 and 100 characters
+                summary = self.summarizer_model_ext.run(negative_sentences, num_sentences=2, min_length=30, max_length=90, use_first=False)
+                
+            else:
+                input_ids = self.tokenizer.encode(negative_sentences, return_tensors="pt")
+                outputs = self.summarizer_model_abst.generate(input_ids, min_new_tokens = 10,max_new_tokens = 35)
+                summary = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+                #self.review_logger_abst.log_review(review, summary)
 
             # filter our empty summaries and already created ones
             if summary == "":
                 continue
             if summary in self.summaries:
                 continue
+        
+            self.review_logger.log_review(review, summary)
+            
+            # summary_sentiment = self.sentiment_model.predict_sentiment([summary])[0] 
+            # if Blob(summary).sentiment.polarity >= 0 or summary_sentiment == "positive":
+            #     continue
 
             self.summaries.append(summary)
 
@@ -128,90 +193,5 @@ class NegativeSummarizer:
 
         return review
 
-
-
-
-# sum = NegativeSummarizer("Obi")
-
-# print(sum.summarize(3))
-# sum = NegativeSummarizer("Tu wien")
-# print(sum.summarize(3))
-
-# sum = NegativeSummarizer("Höfbug")
-# print(sum.summarize(3))
-
-
-
-
-
-
-### IDEAS
-# different language
-# one long summarize of many comments comments and a few short summarize of individual comments
-# max iterations, if not enough data, quit
-# reinforce choosing longer reviews 
-
-# texts = pd.read_csv("./obi-markt.csv", sep=";",  encoding='iso-8859-1')
-
-# texts = texts[(texts['text'] != "")]
-# texts = texts[(texts['stars'] <= 3)]
-# texts = texts["text"].dropna()
-# text_list = []
-# for text in texts:
-#     text_list.append(text)
-# model = Summarizer(reduce_option="max")
-# output_count = 0
-# results = []
-# while(output_count < 5):
-
-#     review = ""
-#     german_found = False
-#     while not german_found:
-#         rand = text_list[random.randint(0, len(text_list)-1)]
-        
-#         try:
-#             if langdetect.detect(rand) == "de":
-#                 review = rand
-#                 german_found = True
-#             else:
-#                 continue 
-                  
-#         except:
-#             continue
-        
-    
-    # blob = Blob(review)
-
-    # for sentence in blob.sentences:
-    #     pass # print(sentence.sentiment)
-    # sentiment_model = SentimentModel()
-
-    # sentences = ""
-    # result, result_prob = sentiment_model.predict_sentiment(blob.raw_sentences, True)
-    # print(result_prob)
-    # for i, noun in enumerate(blob.raw_sentences):
-    #     if result[i] == "negative"  or blob.sentences[i].sentiment.polarity < 0:
-    #         sentences+= noun
-    #     #print(result[i], noun)
-
-    
-#     result = model.run(sentences, ratio=0.5, min_length=30, max_length=100, use_first=False)
-    
-#     if result == "":
-#         continue
-
-#     if result in results:
-#         continue
-#     results.append(result)
-#     print(result + "\n\n")
-#     output_count+=1
-
-# print(results)
-
-#     # if sentiment_model.predict_sentiment([result])[0] != "negative" or Blob(result).sentiment.polarity >= 0:
-#     #     print(result, "Not negative enought")
-#     #     continue
-    
-#     # Will return 3 sentences 
 
 

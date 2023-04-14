@@ -1,9 +1,11 @@
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
+import sys
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+sys.path.append("src/model")
 import negative_summarizer as neg_sum
 import json 
 

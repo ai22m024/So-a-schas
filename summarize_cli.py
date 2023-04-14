@@ -1,5 +1,6 @@
-from negative_summarizer import NegativeSummarizer
-
+from  src.model.negative_summarizer import NegativeSummarizer, SummarizerType
+import sys
+sys.path.append("./")
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -12,24 +13,27 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 header = """
-      ::::::::   ::::::::              :::           ::::::::   ::::::::  :::    :::     :::         :::      :::::::: 
-    :+:    :+: :+:    :+:           :+: :+:        :+:    :+: :+:    :+: :+:    :+:   :+: :+:     :+: :+:   :+:    :+: 
-   +:+        +:+    +:+          +:+   +:+       +:+        +:+        +:+    +:+  +:+   +:+   +:+   +:+  +:+         
-  +#++:++#++ +#+    +:+         +#++:++#++:      +#++:++#++ +#+        +#++:++#++ +#++:++#++: +#++:++#++: +#++:++#++   
-        +#+ +#+    +#+         +#+     +#+             +#+ +#+        +#+    +#+ +#+     +#+ +#+     +#+        +#+    
-#+#    #+# #+#    #+#         #+#     #+#      #+#    #+# #+#    #+# #+#    #+# #+#     #+# #+#     #+# #+#    #+#     
-########   ########          ###     ###       ########   ########  ###    ### ###     ### ###     ###  ########  
+      ::::::::   ::::::::              :::           ::::::::   ::::::::  :::    :::     :::       :::::::: 
+    :+:    :+: :+:    :+:           :+: :+:        :+:    :+: :+:    :+: :+:    :+:   :+: :+::   :+:    :+: 
+   +:+        +:+    +:+          +:+   +:+       +:+        +:+        +:+    +:+  +:+   +:++  +:+         
+  +#++:++#++ +#+    +:+         +#++:++#++:      +#++:++#++ +#+        +#++:++#++ +#++:++#++:: +#++:++#++   
+        +#+ +#+    +#+         +#+     +#+             +#+ +#+        +#+    +#+ +#+     +#+         +#+    
+#+#    #+# #+#    #+#         #+#     #+#      #+#    #+# #+#    #+# #+#    #+# #+#     #+#  #+#    #+#     
+########   ########          ###     ###       ########   ########  ###    ### ###     ###   #######  
 """
 
 print(f"{bcolors.OKGREEN}{header}{bcolors.ENDC}")
 
 location = input(f"{bcolors.HEADER}Über welchen wiener Ort willst du mehr erfahren?{bcolors.ENDC}\n")
 
-summarizer = NegativeSummarizer(location)
+# init summarizer with wished type
+summarizer = NegativeSummarizer(location, SummarizerType.ABSTRACTIVE)
 
 count = int(input(f"{bcolors.HEADER}Wieviele Informationen willst du haben?{bcolors.ENDC}\n"))
 
 print(f"{bcolors.OKGREEN}Berechne Informationen...{bcolors.ENDC}\n")
+
+# summerize values
 summaries = summarizer.summarize(count)
 
 print(f"\n{bcolors.OKCYAN}{location} is a schaas, weil...{bcolors.ENDC}\n")

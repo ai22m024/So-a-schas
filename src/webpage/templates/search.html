@@ -392,21 +392,21 @@
       <div class="container">
         <div class="row">
           <div class="col-xs-4">
-            <div class="card border-dark mb-3" style="max-width: 20rem;min-height: 6rem">
+            <div class="card border-dark mb-3" style="max-width: 20rem;min-height: 8rem">
               <div class="card-body text-dark">
                 <p id="review0" class="card-text vertical-center horizontal-center_sm"></p>
               </div>
             </div>
           </div>
           <div class="col-xs-4">
-            <div class="card border-dark mb-3" style="max-width: 20rem;min-height: 6rem">
+            <div class="card border-dark mb-3" style="max-width: 20rem;min-height: 8rem">
               <div class="card-body text-dark">
                 <p id="review1" class="card-text vertical-center horizontal-center_sm"></p>
               </div>
             </div>
           </div>
           <div class="col-xs-4">
-            <div class="card border-dark mb-3" style="max-width: 20rem;min-height: 6rem">
+            <div class="card border-dark mb-3" style="max-width: 20rem;min-height: 8rem">
               <div class="card-body text-dark">
                 <p id="review2" class="card-text vertical-center horizontal-center_sm"></p>
               </div>
@@ -415,21 +415,21 @@
         </div>
         <div class="row">
           <div class="col-xs-4">
-            <div class="card border-dark mb-3" style="max-width: 20rem;min-height: 6rem">
+            <div class="card border-dark mb-3" style="max-width: 20rem;min-height: 8rem">
               <div class="card-body text-dark">
                 <p id="review3" class="card-text vertical-center horizontal-center_sm"></p>
               </div>
             </div>
           </div>
           <div class="col-xs-4">
-            <div class="card border-dark mb-3" style="max-width: 20rem; min-height: 6rem">
+            <div class="card border-dark mb-3" style="max-width: 20rem; min-height: 8rem">
               <div class="card-body text-dark">
                 <p id="review4" class="card-text vertical-center horizontal-center_sm"></p>
               </div>
             </div>
           </div>
           <div class="col-xs-4">
-            <div class="card border-dark mb-3" style="max-width: 20rem; min-height: 6rem;">
+            <div class="card border-dark mb-3" style="max-width: 20rem; min-height: 8rem;">
               <div class="card-body text-dark">
                 <p id="review5" class="card-text vertical-center horizontal-center_sm"></p>
               </div>
@@ -481,9 +481,6 @@
           $("#loading_text").text(quotes[i]);
         }, 2000);
 
-
-
-
         const request = new XMLHttpRequest();
         request.addEventListener("readystatechange", () => {
           console.log(request.readystate);
@@ -502,14 +499,8 @@
           }
         });
 
-        
         request.open("GET", "http://127.0.0.1:4999/search/" + $("#search_text").val());
         request.send();
-
-
-        
-
-       
 
       });
     })
