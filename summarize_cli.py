@@ -27,7 +27,7 @@ print(f"{bcolors.OKGREEN}{header}{bcolors.ENDC}")
 location = input(f"{bcolors.HEADER}Über welchen wiener Ort willst du mehr erfahren?{bcolors.ENDC}\n")
 
 # init summarizer with wished type
-summarizer = NegativeSummarizer(location, SummarizerType.ABSTRACTIVE)
+summarizer = NegativeSummarizer(location, SummarizerType.EXTRACTIVE)
 
 count = int(input(f"{bcolors.HEADER}Wieviele Informationen willst du haben?{bcolors.ENDC}\n"))
 

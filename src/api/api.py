@@ -5,8 +5,8 @@ app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-sys.path.append("src/model")
-import negative_summarizer as neg_sum
+sys.path.append("./")
+import src.model.negative_summarizer as neg_sum
 import json 
 
 @app.route('/search/<location_name>', methods = ['GET'])
